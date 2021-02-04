@@ -1,0 +1,39 @@
+{
+  "name": "interface-contract",
+  "version": "0.1.0",
+  "description": "Interface to improve on-chain UX for Deversifi",
+  "main": "truffle test",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "coverage": "truffle run coverage",
+    "test:debug": "node --inspect-brk ./node_modules/truffle/build/cli.bundled.js test",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deversifi/interface-contract.git"
+  },
+  "author": "will@deversifi.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/deversifi/interface-contract/issues"
+  },
+  "homepage": "https://github.com/deversifi/interface-contract#readme",
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^3.4.0",
+    "@openzeppelin/truffle-upgrades": "^1.0.2",
+    "@truffle/hdwallet-provider": "^1.0.43",
+    "bignumber.js": "^9.0.0",
+    "dotenv": "^8.2.0",
+    "truffle": "^5.1.43"
+  },
+  "devDependencies": {
+    "eth-gas-reporter": "^0.2.14",
+    "solidity-coverage": "^0.7.10",
+    "truffle-plugin-verify": "^0.5.4"
+  }
+}
