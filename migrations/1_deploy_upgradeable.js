@@ -1,7 +1,10 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades')
 
-const TetherToken = artifacts.require('TetherToken')
+const MockStarkExV2 = artifacts.require('MockStarkExV2')
+const DVFInterface = artifacts.require('DVFInterface')
 
 module.exports = async function (deployer) {
-  const tetherInstance = await deployProxy(TetherToken, ['Euro Tether', 'EURT', 6], { deployer })
-  console.log('Deployed Tether', tetherInstance.address)
+  const mockStarkEx = await deployProxy(MockStarkExV2, [], { deployer })
+  const interfaceInstance = await deployProxy(DVFInterface, [mockStarkEx.address], { deployer })
+  console.log('Deployed Interface', interfaceInstance.address)
+}

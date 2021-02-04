@@ -1,5 +1,7 @@
 pragma solidity 0.6.12;
 
+// SPDX-License-Identifier: MIT
+
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../StarkEx/IStarkExV2.sol";
@@ -12,6 +14,7 @@ contract DVFInterface is Initializable {
     ) public initializer {
       deployedContractProxy = IStarkExV2(_deployedContractProxy);
     }
+
     function registerAndDeposit(
       uint256 starkKey,
       bytes calldata signature,
@@ -32,7 +35,7 @@ contract DVFInterface is Initializable {
       uint256 vaultId
     ) public payable {
       deployedContractProxy.registerUser(msg.sender, starkKey, signature);
-      deployedContractProxy.deposit(starkKey, assetType, vaultId);
+      address(deployedContractProxy).call{value: msg.value }(abi.encode(keccak256("deposit(uint256,uint256,uint256)"), starkKey, assetType, vaultId));
     }
 
     function approveTokenToDeployedProxy(
