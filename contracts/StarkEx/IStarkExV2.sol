@@ -21,4 +21,18 @@ interface IStarkExV2 {
       uint256 assetType,
       uint256 vaultId
     ) external payable;
+
+    function getWithdrawalBalance(
+      uint256 starkKey,
+      uint256 tokenId
+    ) external view returns (uint256);
+
+
+    function getQuantum(
+      uint256 presumedAssetType
+    ) external view returns (uint256);
+
+    function getAssetInfo(
+      uint256 assetType
+    ) external view returns (bytes memory);
 }

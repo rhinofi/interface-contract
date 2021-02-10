@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/deversifi/interface-contract#readme",
   "dependencies": {
+    "@openzeppelin/contracts": "^3.4.0",
     "@openzeppelin/contracts-upgradeable": "^3.4.0",
     "@openzeppelin/truffle-upgrades": "^1.0.2",
     "@truffle/hdwallet-provider": "^1.0.43",
