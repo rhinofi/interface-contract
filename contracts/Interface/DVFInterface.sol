@@ -33,7 +33,7 @@ contract DVFInterface is Initializable {
       uint256 vaultId
     ) public payable {
       instance.registerUser(msg.sender, starkKey, signature);
-      depositETH(starkKey, assetType, vaultId);
+      depositEth(starkKey, assetType, vaultId);
     }
 
     function deposit(
@@ -48,12 +48,12 @@ contract DVFInterface is Initializable {
       instance.deposit(starkKey, assetType, vaultId, quantizedAmount);
     }
 
-    function depositETH(
+    function depositEth(
       uint256 starkKey,
       uint256 assetType,
       uint256 vaultId
     ) public payable {
-      address(instance).call{value: msg.value }(abi.encode(keccak256("deposit(uint256,uint256,uint256)"), starkKey, assetType, vaultId));
+      address(instance).call{value: msg.value }(abi.encodeWithSignature("deposit(uint256,uint256,uint256)", starkKey, assetType, vaultId));
     }
 
     function approveTokenToDeployedProxy(
