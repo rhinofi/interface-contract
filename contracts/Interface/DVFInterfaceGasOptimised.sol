@@ -55,6 +55,7 @@ contract DVFInterface2 is Initializable {
       uint256 assetType,
       uint256 vaultId
     ) public payable {
+      require(gasleft() > 53000, 'INSUFFICIENT_GAS');
       address(instance).call{value: msg.value }(abi.encodeWithSignature("deposit(uint256,uint256,uint256)", starkKey, assetType, vaultId));
     }
 
