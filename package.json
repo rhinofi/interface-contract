@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "truffle test",
+    "compile": "truffle compile --all",
     "coverage": "truffle run coverage",
     "test:debug": "node --inspect-brk ./node_modules/truffle/build/cli.bundled.js test",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
@@ -34,6 +35,9 @@
   },
   "devDependencies": {
     "eth-gas-reporter": "^0.2.14",
+    "ganache-cli": "^6.12.2",
+    "prettier": "^2.3.0",
+    "prettier-plugin-solidity": "^1.0.0-beta.10",
     "solidity-coverage": "^0.7.10",
     "truffle-plugin-verify": "^0.5.4"
   }
