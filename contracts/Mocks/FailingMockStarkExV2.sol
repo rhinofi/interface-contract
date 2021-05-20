@@ -4,7 +4,7 @@ pragma solidity >=0.6.12 < 0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract MockStarkExV2 {
+contract FailingMockStarkExV2 {
 
     IERC20 testToken;
 
@@ -17,6 +17,7 @@ contract MockStarkExV2 {
       uint256 starkKey,
       bytes calldata signature
     ) external {
+      require(false, "Revert in StarkEx");
     }
 
     function deposit(
@@ -25,7 +26,7 @@ contract MockStarkExV2 {
       uint256 vaultId,
       uint256 quantizedAmount
     ) external {
-      testToken.transferFrom(msg.sender, address(this), quantizedAmount * 10 ** 8);
+      require(false, "Revert in StarkEx");
     }
 
     function deposit(
@@ -33,6 +34,7 @@ contract MockStarkExV2 {
       uint256 assetType,
       uint256 vaultId
     ) external payable {
+      require(false, "Revert in StarkEx");
     }
 
     function getQuantum(
