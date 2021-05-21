@@ -4,9 +4,11 @@ pragma solidity >=0.6.12 < 0.9.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 import "../StarkEx/IStarkExV2.sol";
 
 contract DVFInterface2 is Initializable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     IStarkExV2 public instance;
 
     function initialize(
@@ -46,7 +48,7 @@ contract DVFInterface2 is Initializable {
       address tokenAddress,
       uint256 quantum
     ) public {
-      IERC20Upgradeable(tokenAddress).transferFrom(msg.sender, address(this), quantizedAmount * quantum);
+      IERC20Upgradeable(tokenAddress).safeTransferFrom(msg.sender, address(this), quantizedAmount * quantum);
       instance.deposit(starkKey, assetType, vaultId, quantizedAmount);
     }
 
@@ -61,7 +63,7 @@ contract DVFInterface2 is Initializable {
     function approveTokenToDeployedProxy(
       address _token
     ) public {
-      IERC20Upgradeable(_token).approve(address(instance), 2 ** 96 - 1);
+      IERC20Upgradeable(_token).safeApprove(address(instance), 2 ** 96 - 1);
     }
 
     function allWithdrawalBalances(
