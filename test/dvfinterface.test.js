@@ -2,7 +2,6 @@
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades')
 const DVFInterface = artifacts.require('./DVFInterface2.sol')
 const MintableERC20 = artifacts.require('./MintableERC20.sol')
-const PermitMintableERC20 = artifacts.require('./PermitMintableERC20.sol')
 const MockStarkExV2 = artifacts.require('./MockStarkExV2.sol')
 
 
@@ -17,17 +16,13 @@ const quantum = 10 ** 8
 
 
 contract('DVFInterface', function (accounts) {
-  let interface, interfaceWithPermit, mockStark, mockStarkWithPermit, token, tokenWithPermit
+  let interface, mockStark, token
 
   beforeEach('redeploy contract', async function () {
     token = await MintableERC20.new('TestToken', 'TEST')
-    tokenWithPermit = await PermitMintableERC20.new('TestTokenWithPermit', 'TESTPERMIT')
     mockStark = await MockStarkExV2.new(token.address)
-    mockStarkWithPermit = await MockStarkExV2.new(tokenWithPermit.address)
     interface = await deployProxy(DVFInterface, [mockStark.address])
-    interfaceWithPermit = await deployProxy(DVFInterface, [mockStarkWithPermit.address])
     token.mint(accounts[0], _1e18.mul(new BN(5000)))
-    tokenWithPermit.mint(accounts[0], _1e18.mul(new BN('500000000000000000000000000')))
   })
 
   it('initialize: initalizes correctly', async function () {
@@ -80,7 +75,7 @@ contract('DVFInterface', function (accounts) {
     assert.equal(tokenBalanceStarkEx.toString(), _1e18.mul(new BN(5)).toString(), 'Balance not deposited')
   })
 
-  it('registerAndMakeDeposit: transfers token to StarkEx if approved with permit', async function () {
+  it('registerAndMakeDeposit: transfers token to StarkEx if exact amount approved with permit', async function () {
     const currentBlock = await web3.eth.getBlock("latest")
     const chainId = await web3.eth.getChainId()
     const quantizedAmount = 5000000
@@ -88,29 +83,72 @@ contract('DVFInterface', function (accounts) {
     const deadline = currentBlock.timestamp + 1000
     const {v, r, s} = await signPermit({
       account: accounts[0],
-      spender: interfaceWithPermit.address,
-      tokenName: 'TestTokenWithPermit',
-      tokenAddress: tokenWithPermit.address,
+      spender: interface.address,
+      tokenName: 'TestToken',
+      tokenAddress: token.address,
       amount: amount.toString(),
       deadline,
       chainId,
-      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for tokenWithPermit
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for token
       version: '1'
     })
-    await interfaceWithPermit.approveTokenToDeployedProxy(tokenWithPermit.address)
-    await interfaceWithPermit.registerAndDepositWithPermit(
+    await interface.approveTokenToDeployedProxy(token.address)
+    await interface.registerAndDepositWithPermit(
       1234,
       '0x12',
       2345,
       67890123,
       quantizedAmount,
-      tokenWithPermit.address,
+      token.address,
       quantum,
       amount.toString(), deadline, v, r, s,
       {from: accounts[0]}
     )
-    const tokenBalanceStarkEx = await tokenWithPermit.balanceOf(mockStarkWithPermit.address)
+    const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
     assert.equal(tokenBalanceStarkEx.toString(), amount.toString(), 'Balance not deposited')
+  })
+
+  it('registerAndMakeDeposit: transfers token to StarkEx if MAX amount approved with permit', async function () {
+    const currentBlock = await web3.eth.getBlock("latest")
+    const chainId = await web3.eth.getChainId()
+    const quantizedAmount = 5000000
+    const amount = new BN(quantum).mul(new BN(quantizedAmount))
+    const deadline = currentBlock.timestamp + 1000
+    const {v, r, s} = await signPermit({
+      account: accounts[0],
+      spender: interface.address,
+      tokenName: 'TestToken',
+      tokenAddress: token.address,
+      amount: maxUint256,
+      deadline,
+      chainId,
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for token
+      version: '1'
+    })
+    await interface.approveTokenToDeployedProxy(token.address)
+    await interface.registerAndDepositWithPermit(
+      1234,
+      '0x12',
+      2345,
+      67890123,
+      quantizedAmount,
+      token.address,
+      quantum,
+      maxUint256, deadline, v, r, s,
+      {from: accounts[0]}
+    )
+    // Since max amount has been approved using permit, further deposits should work
+    await interface.deposit(
+      1234,
+      2345,
+      67890123,
+      quantizedAmount,
+      token.address,
+      quantum,
+      {from: accounts[0]}
+    )
+    const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
+    assert.equal(tokenBalanceStarkEx.toString(), amount.mul(new BN(2)).toString(), 'Balance not deposited')
   })
 
   it('registerAndMakeDeposit: reverts if user has not pre-approved interface', async function () {
@@ -154,5 +192,105 @@ contract('DVFInterface Failing', function (accounts) {
     const ethBalanceInterface = await web3.eth.getBalance(interface.address)
     assert.equal(ethBalanceStarkEx.toString(), '0', 'Eth stuck in StarkEx')
     assert.equal(ethBalanceInterface.toString(), '0', 'Eth stuck in proxy contract')
+  })
+
+  it('registerAndMakeDeposit: reverts entire transaction if permit signature is invalid', async function () {
+    const currentBlock = await web3.eth.getBlock("latest")
+    const chainId = await web3.eth.getChainId()
+    const quantizedAmount = 5000000
+    const amount = new BN(quantum).mul(new BN(quantizedAmount))
+    const deadline = currentBlock.timestamp + 1000
+    const {v, r, s} = await signPermit({
+      account: accounts[0],
+      spender: interface.address,
+      tokenName: 'TestTokenInvalid', // Invalid token name is one way to make sig invalid
+      tokenAddress: token.address,
+      amount: amount.toString(),
+      deadline,
+      chainId,
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for token
+      version: '1'
+    })
+    await interface.approveTokenToDeployedProxy(token.address)
+    await catchRevert(interface.registerAndDepositWithPermit(
+      1234,
+      '0x12',
+      2345,
+      67890123,
+      quantizedAmount,
+      token.address,
+      quantum,
+      amount.toString(), deadline, v, r, s,
+      {from: accounts[0]}
+    ))
+    const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
+    assert.equal(tokenBalanceStarkEx.toString(), 0, 'Balance wrongly deposited - should have failed because of wrong signature')
+  })
+
+  it('registerAndMakeDeposit: reverts entire transaction if permit signature is expired', async function () {
+    const currentBlock = await web3.eth.getBlock("latest")
+    const chainId = await web3.eth.getChainId()
+    const quantizedAmount = 5000000
+    const amount = new BN(quantum).mul(new BN(quantizedAmount))
+    const deadline = currentBlock.timestamp + 1000
+    const {v, r, s} = await signPermit({
+      account: accounts[0],
+      spender: interface.address,
+      tokenName: 'TestToken',
+      tokenAddress: token.address,
+      amount: amount.toString(),
+      deadline,
+      chainId,
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for token
+      version: '1'
+    })
+    await moveForwardTime(1001)
+    await interface.approveTokenToDeployedProxy(token.address)
+    await catchRevert(interface.registerAndDepositWithPermit(
+      1234,
+      '0x12',
+      2345,
+      67890123,
+      quantizedAmount,
+      token.address,
+      quantum,
+      amount.toString(), deadline, v, r, s,
+      {from: accounts[0]}
+    ))
+    const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
+    assert.equal(tokenBalanceStarkEx.toString(), 0, 'Balance wrongly deposited - should have failed because of expiration')
+  })
+
+  it('registerAndMakeDeposit: reverts entire transaction if permit amount is below transfered amount', async function () {
+    const currentBlock = await web3.eth.getBlock("latest")
+    const chainId = await web3.eth.getChainId()
+    const quantizedAmount = 5000000
+    const amount = new BN(quantum).mul(new BN(quantizedAmount))
+    const deadline = currentBlock.timestamp + 1000
+    const {v, r, s} = await signPermit({
+      account: accounts[0],
+      spender: interface.address,
+      tokenName: 'TestToken',
+      tokenAddress: token.address,
+      amount: amount.div(new BN(2)).toString(),
+      deadline,
+      chainId,
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for token
+      version: '1'
+    })
+    await interface.approveTokenToDeployedProxy(token.address)
+    await catchRevert(interface.registerAndDepositWithPermit(
+      1234,
+      '0x12',
+      2345,
+      67890123,
+      quantizedAmount,
+      token.address,
+      quantum,
+      amount.toString(), deadline, v, r, s,
+      {from: accounts[0]}
+    ))
+    const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
+    assert.equal(tokenBalanceStarkEx.toString(), 0, 'Balance wrongly deposited - should have failed because of permitted amount being less than transfered')
   })
 })
