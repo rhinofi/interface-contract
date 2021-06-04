@@ -5,6 +5,7 @@ pragma solidity >=0.6.12 < 0.9.0;
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/drafts/IERC20Permit.sol";
 import "../StarkEx/IStarkExV2.sol";
 
 contract DVFInterface2 is Initializable {
@@ -30,6 +31,20 @@ contract DVFInterface2 is Initializable {
       deposit(starkKey, assetType, vaultId, quantizedAmount, tokenAddress, quantum);
     }
 
+    function registerAndDepositWithPermit(
+      uint256 starkKey,
+      bytes calldata signature,
+      uint256 assetType,
+      uint256 vaultId,
+      uint256 quantizedAmount,
+      address tokenAddress,
+      uint256 quantum,
+      uint256 permitValue, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) public {
+      instance.registerUser(msg.sender, starkKey, signature);
+      depositWithPermit(starkKey, assetType, vaultId, quantizedAmount, tokenAddress, quantum, permitValue, deadline, v, r, s);
+    }
+
     function registerAndDepositEth(
       uint256 starkKey,
       bytes calldata signature,
@@ -48,6 +63,20 @@ contract DVFInterface2 is Initializable {
       address tokenAddress,
       uint256 quantum
     ) public {
+      IERC20Upgradeable(tokenAddress).safeTransferFrom(msg.sender, address(this), quantizedAmount * quantum);
+      instance.deposit(starkKey, assetType, vaultId, quantizedAmount);
+    }
+
+    function depositWithPermit(
+      uint256 starkKey,
+      uint256 assetType,
+      uint256 vaultId,
+      uint256 quantizedAmount,
+      address tokenAddress,
+      uint256 quantum,
+      uint256 permitValue, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) public {
+      IERC20Permit(tokenAddress).permit(msg.sender, address(this), permitValue, deadline, v, r, s);
       IERC20Upgradeable(tokenAddress).safeTransferFrom(msg.sender, address(this), quantizedAmount * quantum);
       instance.deposit(starkKey, assetType, vaultId, quantizedAmount);
     }

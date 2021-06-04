@@ -2,11 +2,13 @@
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades')
 const DVFInterface = artifacts.require('./DVFInterface2.sol')
 const MintableERC20 = artifacts.require('./MintableERC20.sol')
+const PermitMintableERC20 = artifacts.require('./PermitMintableERC20.sol')
 const MockStarkExV2 = artifacts.require('./MockStarkExV2.sol')
 
 
 const { logGasUsage, blockTime, snapshot, restore, forceMine, moveForwardTime } = require('./helpers/utils')
 const catchRevert = require("./helpers/exceptions").catchRevert
+const signPermit = require('./helpers/signPermit')
 
 const BN = web3.utils.BN
 const _1e18 = new BN('1000000000000000000')
@@ -15,13 +17,17 @@ const quantum = 10 ** 8
 
 
 contract('DVFInterface', function (accounts) {
-  let interface, mockStark, token
+  let interface, interfaceWithPermit, mockStark, mockStarkWithPermit, token, tokenWithPermit
 
   beforeEach('redeploy contract', async function () {
     token = await MintableERC20.new('TestToken', 'TEST')
+    tokenWithPermit = await PermitMintableERC20.new('TestTokenWithPermit', 'TESTPERMIT')
     mockStark = await MockStarkExV2.new(token.address)
+    mockStarkWithPermit = await MockStarkExV2.new(tokenWithPermit.address)
     interface = await deployProxy(DVFInterface, [mockStark.address])
+    interfaceWithPermit = await deployProxy(DVFInterface, [mockStarkWithPermit.address])
     token.mint(accounts[0], _1e18.mul(new BN(5000)))
+    tokenWithPermit.mint(accounts[0], _1e18.mul(new BN('500000000000000000000000000')))
   })
 
   it('initialize: initalizes correctly', async function () {
@@ -72,6 +78,39 @@ contract('DVFInterface', function (accounts) {
     )
     const tokenBalanceStarkEx = await token.balanceOf(mockStark.address)
     assert.equal(tokenBalanceStarkEx.toString(), _1e18.mul(new BN(5)).toString(), 'Balance not deposited')
+  })
+
+  it('registerAndMakeDeposit: transfers token to StarkEx if approved with permit', async function () {
+    const currentBlock = await web3.eth.getBlock("latest")
+    const chainId = await web3.eth.getChainId()
+    const quantizedAmount = 5000000
+    const amount = new BN(quantum).mul(new BN(quantizedAmount))
+    const deadline = currentBlock.timestamp + 1000
+    const {v, r, s} = await signPermit({
+      account: accounts[0],
+      spender: interfaceWithPermit.address,
+      tokenName: 'TestTokenWithPermit',
+      tokenAddress: tokenWithPermit.address,
+      amount: amount.toString(),
+      deadline,
+      chainId,
+      // Default Openzeppelin constructor for ERC20Permit sets version to '1' for tokenWithPermit
+      version: '1'
+    })
+    await interfaceWithPermit.approveTokenToDeployedProxy(tokenWithPermit.address)
+    await interfaceWithPermit.registerAndDepositWithPermit(
+      1234,
+      '0x12',
+      2345,
+      67890123,
+      quantizedAmount,
+      tokenWithPermit.address,
+      quantum,
+      amount.toString(), deadline, v, r, s,
+      {from: accounts[0]}
+    )
+    const tokenBalanceStarkEx = await tokenWithPermit.balanceOf(mockStarkWithPermit.address)
+    assert.equal(tokenBalanceStarkEx.toString(), amount.toString(), 'Balance not deposited')
   })
 
   it('registerAndMakeDeposit: reverts if user has not pre-approved interface', async function () {
