@@ -10,6 +10,7 @@
     "test": "truffle test",
     "compile": "truffle compile --all",
     "coverage": "truffle run coverage",
+    "verify": "truffle run verify DVFInterface2",
     "test:debug": "node --inspect-brk ./node_modules/truffle/build/cli.bundled.js test",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol"

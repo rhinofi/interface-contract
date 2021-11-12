@@ -24,7 +24,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
-const { NMEMONIC, PROJECT_ID } = process.env
+const { NMEMONIC, PROJECT_ID, ETHSCAN_KEY } = process.env
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -89,6 +89,13 @@ module.exports = {
   // Set default mocha options here, use special reporters etc.
   mocha: {
     // timeout: 100000
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+
+  api_keys: {
+    etherscan: ETHSCAN_KEY
   },
 
   // Configure your compilers
