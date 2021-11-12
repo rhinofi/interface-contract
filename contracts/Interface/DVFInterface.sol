@@ -22,7 +22,7 @@ contract DVFInterface is Initializable {
       uint256 vaultId,
       uint256 quantizedAmount
     ) public {
-      instance.registerUser(msg.sender, starkKey, signature);
+      instance.registerEthAddress(msg.sender, starkKey, signature);
       deposit(starkKey, assetType, vaultId, quantizedAmount);
     }
 
@@ -32,7 +32,7 @@ contract DVFInterface is Initializable {
       uint256 assetType,
       uint256 vaultId
     ) public payable {
-      instance.registerUser(msg.sender, starkKey, signature);
+      instance.registerEthAddress(msg.sender, starkKey, signature);
       depositEth(starkKey, assetType, vaultId);
     }
 

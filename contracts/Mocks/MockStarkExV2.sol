@@ -12,7 +12,7 @@ contract MockStarkExV2 {
       testToken = IERC20(_token);
     }
 
-    function registerUser(
+    function registerEthAddress(
       address ethKey,
       uint256 starkKey,
       bytes calldata signature

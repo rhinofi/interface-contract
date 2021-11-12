@@ -3,7 +3,7 @@ pragma solidity >=0.6.12 < 0.9.0;
 // SPDX-License-Identifier: MIT
 
 interface IStarkExV2 {
-    function registerUser(
+    function registerEthAddress(
       address ethKey,
       uint256 starkKey,
       bytes calldata signature
