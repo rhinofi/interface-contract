@@ -3,9 +3,9 @@ const { deployProxy } = require('@openzeppelin/truffle-upgrades')
 const DVFInterface = artifacts.require('DVFInterface2')
 
 module.exports = async function (deployer, a, b ,c) {
-  // if (deployer.network !== 'ropsten') {
-  //   return
-  // }
+  if (deployer.network !== 'ropsten') {
+    return
+  }
   const { customConfig } = deployer.networks[deployer.network]
   const { starkExAddress } = customConfig
 

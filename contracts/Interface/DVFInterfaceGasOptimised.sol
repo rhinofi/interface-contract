@@ -41,7 +41,7 @@ contract DVFInterface2 is Initializable {
       uint256 quantum,
       uint256 permitValue, uint256 deadline, uint8 v, bytes32 r, bytes32 s
     ) public {
-      instance.registerUser(msg.sender, starkKey, signature);
+      instance.registerEthAddress(msg.sender, starkKey, signature);
       depositWithPermit(starkKey, assetType, vaultId, quantizedAmount, tokenAddress, quantum, permitValue, deadline, v, r, s);
     }
 
