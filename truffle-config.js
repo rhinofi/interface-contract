@@ -75,7 +75,7 @@ module.exports = {
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true,     // Skip dry run before migrations? (default: false for public nets )
       customConfig: {
-        starkExAddress: '0x6d0a556ccfcec8f557d76642aff47127ceaf02b3'
+        starkExAddress: '0xb58F8853F9451f20a39EBAd0af812a011bDb6A9D'
       }
     },
     // Useful for private networks
